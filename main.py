@@ -25,7 +25,7 @@ db.close()
 
 storage = MemoryStorage()
 
-bot = Bot(token='6595000010:AAFNnPSbdi6C8HjrTnlbAWu1p5okdh5EHeo')
+bot = Bot(token='API_TOKEN_BOTA')
 dp = Dispatcher(bot, storage=storage)
 
 datas = {
