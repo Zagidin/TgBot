@@ -25,7 +25,7 @@ db.close()
 
 storage = MemoryStorage()
 
-bot = Bot(token='API_TOKEN_BOTA')
+bot = Bot(token='6595000010:AAFNnPSbdi6C8HjrTnlbAWu1p5okdh5EHeo')
 dp = Dispatcher(bot, storage=storage)
 
 datas = {
@@ -269,6 +269,7 @@ async def play_game(message: types.Message):
 # ------------- Игра Анаграмма ------------
 word_bot = ''
 
+# -------------- Игра Скрабл -----------
 scores = 0
 
 
@@ -402,7 +403,7 @@ async def process_word(message: types.Message, state: FSMContext):
         data['current_player'] = message.from_user.id
 
     user_id = data['current_player']
-    slovo = data['current_word']
+    slovo = data['current_word'].lower()
 
     if slovo in dictionary and message.from_user.id == user_id:
 
