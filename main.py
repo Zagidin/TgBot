@@ -1,8 +1,6 @@
 import asyncio
 import sqlite3
 
-from collections import Counter
-
 from random import choice, shuffle
 from aiogram import Bot, Dispatcher, executor, types
 from aiogram.dispatcher import FSMContext
@@ -29,7 +27,7 @@ db.close()
 
 storage = MemoryStorage()
 
-bot = Bot(token='API_BOT')
+bot = Bot(token='6595000010:AAFNnPSbdi6C8HjrTnlbAWu1p5okdh5EHeo')
 dp = Dispatcher(bot, storage=storage)
 
 datas = {
@@ -40,6 +38,10 @@ datas = {
 class Registration(StatesGroup):
     name = State()
     love_genres = State()
+
+
+class Anagramma(StatesGroup):
+    user_word = State()
 
 
 @dp.message_handler(commands=['start'])
@@ -64,6 +66,7 @@ async def help_bot(message: types.Message):
         f"\n\nИли Нажмите на кнопку, которая появилась внизу 🛎️",
         reply_markup=keyboard
     )
+
     await message.answer(
         "Вы в любое время можете вызвать помощь бота\nНаписав /help.\n\n"
         "Команды бота прописаны в МЕНЮ команд, чтобы её открыть\n"
@@ -165,7 +168,7 @@ async def user_data(message: types.Message):
     conn = sqlite3.connect('zagura_bot.db')
     cursors = conn.cursor()
 
-    await message.answer(f"Данные 🗒\n\n\tИмя 🪪 :\n{datas['Имя']}\n\nНапишите ТРИ (3) любимых жанра 💬 :\n{datas['Любимые жанры']}")
+    await message.answer(f"Данные 🗒\n\n\tИмя 🪪 :\n{datas['Имя']}\n\nЛюбимые жанры 💬 :\n{datas['Любимые жанры']}")
 
     name = datas['Имя']
     love_genres = datas['Любимые жанры']
@@ -205,7 +208,7 @@ def print_dict_on_separate_lines(input_dict):
 def find_names_with_same_values(input_dict):
     result = {}
     for key, value in input_dict.items():
-        value_tuple = tuple(value)  # Преобразование множества в кортеж
+        value_tuple = tuple(value)
         if value_tuple not in result:
             result[value_tuple] = []
         result[value_tuple].append(key)
@@ -256,11 +259,41 @@ async def play_game(message: types.Message):
     keyboards.add(btn5)
     keyboards.row(btn6, btn4)
 
-    await message.answer(f"@{message.from_user.username} Выбери одну игру из трёх предложных снизу 😉", reply_markup=keyboards)
+    await message.answer(
+        f"@{message.from_user.username} "
+        f"Выбери одну игру из предложных снизу 😉",
+        reply_markup=keyboards
+    )
+
+# ------------- Игра Анаграмма ------------
+word_bot = ''
+
+# -------------- Игра Скрабл --------------
+dictionary = {
+    'apple',
+    'banana',
+    'cherry',
+    'grape',
+    'orange',
+    'kiwi',
+    'lemon',
+    'melon',
+    'pear',
+    'plum'
+}
+
+game_state = {
+    'current_word': '',
+    'current_player': None,
+    'scores': {}
+}
 
 
 @dp.message_handler(lambda message: message.text)
 async def send_message(message: types.Message):
+
+    global word_bot
+
     if message.text == 'Анаграммы 🎭':
 
         words = ['Priora', 'Школа', 'Python', 'Старт', 'Aiogram', 'Анаграмма', 'import']
@@ -274,8 +307,14 @@ async def send_message(message: types.Message):
         await asyncio.sleep(3.5)
 
         word = choice(words)
+        word_bot += word
 
-        await message.answer(f"Всё, я Загадал слово << {word} >>")
+        await message.answer(
+            f"Всё, я Загадал слово ✍ \n\n"
+            f"Посморишь тогда когда сдашься 🫡 "
+            f"\n<tg-spoiler>🫵👁\n{word}</tg-spoiler>",
+            parse_mode='HTML'
+        )
 
         word_shuffled = list(word)
         shuffle(word_shuffled)
@@ -285,6 +324,15 @@ async def send_message(message: types.Message):
                              f"\n\n\t{shuffled_word}\n\n"
                              f"Угадай что-за слово я загадал изначально"
                              f"\nУдачи!")
+        await Anagramma.user_word.set()
+
+    elif message.text == 'Скрабл 🔠':
+
+        game_state['current_player'] = message.from_user.id
+        game_state['current_word'] = ''
+        game_state['scores'][message.from_user.id] = 0
+
+        await message.answer("Добро пожаловать в игру! Начнем с вас. Напишите слово:")
 
     elif message.text == 'Пенальти ⚽':
         await message.answer_dice("⚽")
@@ -294,6 +342,57 @@ async def send_message(message: types.Message):
         await message.answer_dice("🎳")
     else:
         await message.answer("Пока в разработке :)")
+
+
+# ------------------------------------- Игра Анаграмма ----------------------------------
+
+
+@dp.message_handler(state=Anagramma.user_word)
+async def anagram(message: types.Message, state: FSMContext):
+
+    global word_bot
+
+    async with state.proxy() as data:
+        data['user_word'] = message.text
+
+    if data['user_word'] == word_bot:
+        await message.answer("Вы верно угадали!")
+        await state.finish()
+        word_bot = ''
+
+    elif data['user_word'].lower() == 'стоп':
+        await state.finish()
+
+        word_bot = ''
+
+        gif = open('GIF/Otmena.gif', 'rb')
+        await message.reply_animation(animation=gif)
+
+        await message.answer("Можете выбирать другую игру 🤖\n\n   /help - Помощь")
+
+    else:
+        await message.answer(
+            f"Неверно, я такого не загадывал!\n"
+            f"\nНапишите   ==  <b><u><code>Стоп</code></u></b>  ==   чтобы Выйти",
+            parse_mode='HTML'
+        )
+
+
+# ---------------------------------- Игра Скрабл -----------------------------------
+
+
+@dp.message_handler()
+async def process_word(message: types.Message):
+    word = message.text.lower()
+    if word in dictionary and message.from_user.id == game_state['current_player']:
+        game_state['current_word'] = word
+        game_state['scores'][game_state['current_player']] += len(word)
+        await message.answer(
+            f"Хорошо! Слово принято. "
+            f"Ваше текущее очко: {game_state['scores'][game_state['current_player']]}")
+    else:
+        await message.answer("Ошибка! Попробуйте еще раз.")
+
 
 if __name__ == '__main__':
     executor.start_polling(dp, skip_updates=True)
