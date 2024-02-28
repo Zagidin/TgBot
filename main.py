@@ -47,8 +47,13 @@ class Anagramma(StatesGroup):
     user_word = State()
 
 
+class Uniqalsimvols(StatesGroup):
+    uniq_word = State()
+
+
 @dp.message_handler(commands=['start'])
 async def start(message: types.Message):
+
     await message.reply(
         f"👋 Привет @{message.from_user.username}!\n"
         f"\nЭто Мини-Бот << Zagura >>\n"
@@ -58,8 +63,10 @@ async def start(message: types.Message):
 
 @dp.message_handler(commands=['help'])
 async def help_bot(message: types.Message):
+
     keyboard = types.ReplyKeyboardMarkup(resize_keyboard=True)
     keyboard.add(types.KeyboardButton('Начать регистрацию 📝'))
+
     await message.answer(
         f"Привет, это Бот << Zagura >>\n"
         f"\nДля начала Вас нужно зарегистировать\n"
@@ -84,24 +91,29 @@ async def help_bot(message: types.Message):
 
 @dp.message_handler(commands=['registration'])
 async def registration_bot(message: types.Message) -> None:
+
     await message.answer(
         "Как, Вас зовут? 😊",
         reply_markup=types.ReplyKeyboardRemove()
     )
+
     await Registration.name.set()
 
 
 @dp.message_handler(content_types=['text'], state=Registration.name)
 async def name_polzovatel(message: types.Message, state: FSMContext) -> None:
+
     async with state.proxy() as data:
         data['name'] = message.text
 
     await message.answer("Введите Ваши любимые жанры через запятую и пробел 😜")
+
     await Registration.next()
 
 
 @dp.message_handler(content_types=['text'], state=Registration.love_genres)
 async def love_genres_polzovat(message: types.Message, state: FSMContext) -> None:
+
     global datas
 
     async with state.proxy() as data:
@@ -114,6 +126,7 @@ async def love_genres_polzovat(message: types.Message, state: FSMContext) -> Non
 
     await message.answer("📝")
     await message.answer("Вы зарегистрировались! ❤️‍🔥")
+
     await message.answer(
         text=f'Чтобы сохранить данные\nНажмите на\t<b><i>/save</i></b> 📌\n'
              f'\nЕсли вы хотите отредактировать данные\n'
@@ -127,12 +140,15 @@ async def love_genres_polzovat(message: types.Message, state: FSMContext) -> Non
 
 @dp.message_handler(lambda message: message.text == 'Начать регистрацию 📝')
 async def send_message(message: types.Message):
+
     await message.answer('Как Вас зовут? 😊', reply_markup=types.ReplyKeyboardRemove())
+
     await Registration.name.set()
 
 
 @dp.message_handler(state=Registration.name)
 async def process_name(message: types.Message, state: FSMContext):
+
     async with state.proxy() as data:
         data['name'] = message.text
 
@@ -143,6 +159,7 @@ async def process_name(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=Registration.love_genres)
 async def process_love_genres(message: types.Message, state: FSMContext):
+
     global datas
 
     async with state.proxy() as data:
@@ -163,10 +180,14 @@ async def process_love_genres(message: types.Message, state: FSMContext):
 
 @dp.message_handler(commands=['save'])
 async def user_data(message: types.Message):
+
     conn = sqlite3.connect('zagura_bot.db')
     cursors = conn.cursor()
 
-    await message.answer(f"Данные 🗒\n\n\tИмя 🪪 :\n{datas['Имя']}\n\nЛюбимые жанры 💬 :\n{datas['Любимые жанры']}")
+    await message.answer(
+        f"Данные 🗒\n\n\tИмя 🪪 :\n{datas['Имя']}\n"
+        f"\nЛюбимые жанры 💬 :\n{datas['Любимые жанры']}"
+    )
 
     name = datas['Имя']
     love_genres = datas['Любимые жанры']
@@ -180,6 +201,7 @@ async def user_data(message: types.Message):
     conn.close()
 
     await message.answer(f"Нажмите на /help 🤖")
+
 
 # ------------------------------- Сравнение интересов ( жанров ) ----------------------------
 
@@ -268,13 +290,13 @@ async def play_game(message: types.Message):
 
 # ------------- Игра Анаграмма ------------
 word_bot = ''
-
 # -------------- Игра Скрабл -----------
 scores = 0
 
 
 @dp.message_handler(lambda message: message.text)
 async def send_message(message: types.Message):
+
     global word_bot
 
     if message.text == 'Анаграммы 🎭':
@@ -304,10 +326,13 @@ async def send_message(message: types.Message):
         shuffle(word_shuffled)
         shuffled_word = ''.join(word_shuffled)
 
-        await message.answer(f"Вот Анограмма: "
-                             f"\n\n\t{shuffled_word}\n\n"
-                             f"Угадай что-за слово я загадал изначально 🤖"
-                             f"\n\nУдачи! 👀✊")
+        await message.answer(
+            f"Вот Анограмма: "
+            f"\n\n\t{shuffled_word}\n\n"
+            f"Угадай что-за слово я загадал изначально 🤖"
+            f"\n\nУдачи! 👀✊"
+        )
+
         await Anagramma.user_word.set()
 
     elif message.text == 'Скрабл 🔠':
@@ -321,6 +346,15 @@ async def send_message(message: types.Message):
 
         await Scrable.current_word.set()
 
+    elif message.text == 'Уникальные символы 🦊':
+
+        await message.answer(
+            f"Добро пожаловать в игру:\n Уникальные символы 🦊\n"
+            f"\nПопробуйте составить предложение из уникальных символов... 💬✍"
+        )
+
+        await Uniqalsimvols.uniq_word.set()
+
     elif message.text == 'Пенальти ⚽':
         await message.answer_dice("⚽")
     elif message.text == 'Баскетболл 🏀':
@@ -328,7 +362,7 @@ async def send_message(message: types.Message):
     elif message.text == 'Боулинг 🎳':
         await message.answer_dice("🎳")
     else:
-        await message.answer("Пока в разработке :)")
+        await message.answer("Пока в разработке :)\n\n/help  -  Помощь")
 
 
 # ------------------------------------- Игра Анаграмма ----------------------------------
@@ -353,9 +387,11 @@ async def anagram(message: types.Message, state: FSMContext):
         )
 
         await state.finish()
+
         word_bot = ''
 
     elif data['user_word'].lower() == 'стоп':
+
         await state.finish()
 
         word_bot = ''
@@ -370,6 +406,7 @@ async def anagram(message: types.Message, state: FSMContext):
         )
 
     else:
+
         await message.answer(
             f"Неверно, я такого не загадывал! 😡\n"
             f"\nНапишите   ==  ⭕️<b><u><code>Стоп</code></u></b>⭕️  ==   чтобы Выйти ",
@@ -381,6 +418,7 @@ async def anagram(message: types.Message, state: FSMContext):
 
 @dp.message_handler(state=Scrable)
 async def process_word(message: types.Message, state: FSMContext):
+
     global scores
 
     dictionary = {
@@ -416,6 +454,7 @@ async def process_word(message: types.Message, state: FSMContext):
         )
 
     elif message.text.lower() == 'стоп':
+
         await state.finish()
 
         gif = open('GIF/Otmena.mp4', 'rb')
@@ -428,7 +467,63 @@ async def process_word(message: types.Message, state: FSMContext):
         )
 
     else:
+
         await message.answer("Ошибка! Попробуйте еще раз.\nНадо ввести фрукты на Анг. яз 🥹")
+
+        await message.answer(
+            f"\nНапишите   ==  ⭕️<b><u><code>Стоп</code></u></b>⭕️  ==   чтобы Выйти ",
+            parse_mode='HTML'
+        )
+
+
+@dp.message_handler(state=Uniqalsimvols.uniq_word)
+async def proces_uniqalsimvols(message: types.Message, state: FSMContext):
+
+    unique_symbols = set('йцукенгшщзхъёфывапролджэюбьтимсчя')
+
+    async with state.proxy() as data:
+        data['uniq_word'] = message.text.lower()
+
+    word_polzovatel = data['uniq_word']
+    word_polzovatel_replays = word_polzovatel.replace(' ', '')
+
+    if set(word_polzovatel_replays).issubset(unique_symbols):
+
+        await state.finish()
+
+        unique_symbols -= set(word_polzovatel_replays)
+
+        await message.answer(
+            f"Отлично! 🤖\n\n<b>Предложение:</b>\n <u><code><i>{word_polzovatel}</i></code></u>\n"
+            f"\nУникальные символы осталось: "
+            f"<b><i><code>{len(' '.join(unique_symbols))}</code></i></b> 🫠",
+            parse_mode='HTML'
+        )
+
+        await message.answer(
+            f"Можете выбирать другую игру 🤖\n"
+            f"\n   1)  /help   -   Помощь 👨‍🏫\n"
+            f"\n2) /play_game   -   Играть 🎖"
+        )
+
+    elif message.text.lower() == 'стоп':
+
+        await state.finish()
+
+        gif = open('GIF/Otmena.mp4', 'rb')
+        await message.reply_animation(animation=gif)
+
+        await message.answer(
+            f"Можете выбирать другую игру 🤖\n"
+            f"\n   1)  /help   -   Помощь 👨‍🏫\n"
+            f"\n2) /play_game   -   Играть 🎖"
+        )
+
+    else:
+
+        await message.answer(
+            "Ошибка! Используйте только уникальные символы из текущего набора."
+        )
 
         await message.answer(
             f"\nНапишите   ==  ⭕️<b><u><code>Стоп</code></u></b>⭕️  ==   чтобы Выйти ",
