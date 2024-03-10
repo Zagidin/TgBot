@@ -25,7 +25,7 @@ db.close()
 
 storage = MemoryStorage()
 
-bot = Bot(token='API_TOKEN_BOTA')
+bot = Bot(token='API_TOKEN')
 dp = Dispatcher(bot, storage=storage)
 
 datas = {
@@ -482,21 +482,23 @@ async def proces_uniqalsimvols(message: types.Message, state: FSMContext):
     unique_symbols = set('йцукенгшщзхъёфывапролджэюбьтимсчя')
 
     async with state.proxy() as data:
-        data['uniq_word'] = message.text.lower()
+        data['uniq_word'] = message.text
 
-    word_polzovatel = data['uniq_word']
+    word_polzovatel = data['uniq_word'].lower()
     word_polzovatel_replays = word_polzovatel.replace(' ', '')
 
     if set(word_polzovatel_replays).issubset(unique_symbols):
 
         await state.finish()
 
-        unique_symbols -= set(word_polzovatel_replays)
+        unique_symbols -= set(word_polzovatel)
+
+        list_uniq_symvols = list(''.join(unique_symbols))
 
         await message.answer(
-            f"Отлично! 🤖\n\n<b>Предложение:</b>\n <u><code><i>{word_polzovatel}</i></code></u>\n"
-            f"\nУникальные символы осталось: "
-            f"<b><i><code>{len(' '.join(unique_symbols))}</code></i></b> 🫠",
+            f"Отлично! 🤖\n\n<b>Предложение:</b>\n <u><code><i>{data['uniq_word']}</i></code></u>\n"
+            f"\nУникальные символы осталось:\t  <b><i><code>{len(list_uniq_symvols)}</code></i></b>"
+            f"<b><i><code>\n\n{', '.join(unique_symbols)}</code></i></b> 🫠",
             parse_mode='HTML'
         )
 
@@ -522,7 +524,7 @@ async def proces_uniqalsimvols(message: types.Message, state: FSMContext):
     else:
 
         await message.answer(
-            "Ошибка! Используйте только уникальные символы из текущего набора."
+            "Ошибка! Используйте только уникальные символы из алфавита."
         )
 
         await message.answer(
